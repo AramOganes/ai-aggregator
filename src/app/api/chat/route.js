@@ -1,5 +1,7 @@
 // src/app/api/chat/route.js
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import OpenAI from "openai";
 
@@ -7,12 +9,23 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req) {
   try {
+    // Проверяем наличие сессии пользователя
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { model, prompt, userId } = await req.json();
-    if (!model || !prompt || !userId) {
+    if (!model || !prompt) {
       return NextResponse.json(
-        { error: "Missing model, prompt or userId" },
+        { error: "Missing model or prompt" },
         { status: 400 }
       );
+    }
+
+    // Если клиент передал чужой userId, отказываем
+    if (userId && userId !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     let responseText;
@@ -35,9 +48,9 @@ export async function POST(req) {
       throw err;
     }
 
-    // Сохраняем в БД
+    // Сохраняем запрос и ответ в БД от имени текущего пользователя
     const record = await prisma.request.create({
-      data: { userId, prompt, model, response: responseText },
+      data: { userId: session.user.id, prompt, model, response: responseText },
     });
     return NextResponse.json(record);
   } catch (err) {
