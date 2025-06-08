@@ -18,7 +18,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project relies on system fonts and does not automatically load custom fonts.
+If you would like to use fonts such as [Geist](https://vercel.com/font), configure
+them yourself with [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts).
 
 ## Learn More
 
