@@ -1,5 +1,7 @@
 // src/app/api/chat/route.js
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import OpenAI from "openai";
 
@@ -7,13 +9,20 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req) {
   try {
-    const { model, prompt, userId } = await req.json();
-    if (!model || !prompt || !userId) {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { model, prompt } = await req.json();
+    if (!model || !prompt) {
       return NextResponse.json(
-        { error: "Missing model, prompt or userId" },
+        { error: "Missing model or prompt" },
         { status: 400 }
       );
     }
+
+    const userId = session.user.id;
 
     let responseText;
     try {
